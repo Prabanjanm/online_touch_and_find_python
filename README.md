@@ -1,0 +1,13 @@
+ "😂 Aim.exe crashed",
+            "💀 Bro clicked air",
+            "🐒 Monkey aim activated",
+            "🚀 Wrong planet bro",
+            "🤣 Not even close",
+             "😂 Bro clicked the wrong galaxy!",
+    "💀 That was nowhere near!",
+    "🤣 Even my grandma clicks better!",
+    "🐒 Monkey aim detected!",
+    "🚀 You missed it by a kilometer!",
+    "🧠 Brain buffering... try again!",
+    "🎯 Target escaped your aim!",
+    "😅 Nice try, but nope!"

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Multiplayer Hidden Game</title>
+
+<script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+
+<style>
+
+body{
+font-family:Arial;
+text-align:center;
+}
+
+#gameArea{
+width:90vw;
+height:60vh;
+max-width:500px;
+border:3px solid black;
+position:relative;
+margin:auto;
+touch-action:none;
+}
+
+.click{
+position:absolute;
+width:20px;
+height:20px;
+background:red;
+border-radius:50%;
+animation:pop 0.5s forwards;
+}
+
+@keyframes pop{
+0%{transform:scale(0.5);opacity:1;}
+100%{transform:scale(2);opacity:0;}
+}
+
+button{
+padding:10px 15px;
+font-size:16px;
+margin:5px;
+}
+
+input{
+padding:8px;
+font-size:16px;
+}
+
+#chatBox{
+width:300px;
+height:150px;
+border:1px solid black;
+overflow:auto;
+margin:auto;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h2>🎮 Multiplayer Hidden Object Game</h2>
+
+<input id="name" placeholder="Name">
+<input id="room" placeholder="Room ID">
+
+<button onclick="joinRoom()">Join</button>
+<button onclick="startGame()">Start</button>
+<button onclick="leaveRoom()">Leave</button>
+
+<h3 id="timer">Time:60</h3>
+
+<div id="players"></div>
+
+<div id="gameArea"></div>
+
+<p id="message"></p>
+
+<h3>Chat</h3>
+
+<div id="chatBox"></div>
+
+<input id="chatInput">
+<button onclick="sendChat()">Send</button>
+
+<script>
+
+const socket=io()
+
+let name=""
+let room=""
+
+window.onload=function(){
+
+const savedName=localStorage.getItem("playerName")
+const savedRoom=localStorage.getItem("roomId")
+
+if(savedName && savedRoom){
+
+name=savedName
+room=savedRoom
+
+document.getElementById("name").value=savedName
+document.getElementById("room").value=savedRoom
+
+socket.emit("join_room",{name:name,room:room})
+
+}
+
+}
+
+function joinRoom(){
+
+name=document.getElementById("name").value
+room=document.getElementById("room").value
+
+localStorage.setItem("playerName",name)
+localStorage.setItem("roomId",room)
+
+socket.emit("join_room",{name:name,room:room})
+
+}
+
+function leaveRoom(){
+
+localStorage.removeItem("playerName")
+localStorage.removeItem("roomId")
+
+location.reload()
+
+}
+
+function startGame(){
+
+socket.emit("start_game",{room:room})
+
+}
+
+const gameArea=document.getElementById("gameArea")
+
+function sendClick(x,y){
+
+socket.emit("click_position",{name:name,room:room,x:x,y:y})
+
+}
+
+gameArea.addEventListener("click",function(e){
+
+const rect=gameArea.getBoundingClientRect()
+
+sendClick(e.clientX-rect.left,e.clientY-rect.top)
+
+})
+
+gameArea.addEventListener("touchstart",function(e){
+
+const rect=gameArea.getBoundingClientRect()
+
+const touch=e.touches[0]
+
+sendClick(touch.clientX-rect.left,touch.clientY-rect.top)
+
+})
+
+socket.on("update_players",function(players){
+
+let html="<h3>Scores</h3>"
+
+for(let p in players){
+html+=p+" : "+players[p]+"<br>"
+}
+
+document.getElementById("players").innerHTML=html
+
+})
+
+socket.on("timer_update",function(t){
+
+document.getElementById("timer").innerText="Time:"+t
+
+})
+
+socket.on("game_message",function(msg){
+
+document.getElementById("message").innerText=msg
+
+})
+
+socket.on("click_effect",function(data){
+
+const dot=document.createElement("div")
+
+dot.className="click"
+
+dot.style.left=data.x+"px"
+dot.style.top=data.y+"px"
+
+gameArea.appendChild(dot)
+
+setTimeout(()=>dot.remove(),500)
+
+})
+
+socket.on("chat_message",function(msg){
+
+const box=document.getElementById("chatBox")
+
+box.innerHTML+=msg+"<br>"
+
+box.scrollTop=box.scrollHeight
+
+})
+
+socket.on("game_over",function(data){
+
+document.getElementById("message").innerText="🏆 Winner: "+data.winner
+
+})
+
+function sendChat(){
+
+const input=document.getElementById("chatInput")
+
+socket.emit("chat_message",{room:room,name:name,msg:input.value})
+
+input.value=""
+
+}
+
+</script>
+
+</body>
+
+</html>
